@@ -61,7 +61,7 @@ get_afs_membership_user_list() {
         fi
     done < <(get_afs_membership_list "$1" | jq --compact-output '.[]')
 
-    echo ${users[@]}
+    echo ${users[@]} | jq --raw-input 'split(" ") | sort'
 }
 
 
@@ -75,7 +75,7 @@ get_afs_membership_group_list() {
         fi
     done < <(get_afs_membership_list "$1" | jq --compact-output '.[]')
 
-    echo ${users[@]}
+    echo ${users[@]} | jq --raw-input 'split(" ") | sort'
 }
 
 
@@ -89,8 +89,7 @@ get_afs_owned_user_list() {
         fi
     done < <(get_afs_owned_list "$1" | jq --compact-output '.[]')
 
-    echo ${users[@]}
-
+    echo ${users[@]} | jq --raw-input 'split(" ") | sort'
 }
 
 
@@ -104,19 +103,24 @@ get_afs_owned_group_list() {
         fi
     done < <(get_afs_owned_list "$1" | jq --compact-output '.[]')
 
-    echo ${users[@]}
-
+    echo ${users[@]} | jq --raw-input 'split(" ") | sort'
 }
 
 
 get_afs_users_recursive() {
+    local -a array_tmpusr
+    local -a array_tmpgrp
+
     local -A user_dict
 
-    user_dict["$1"]=$(get_afs_membership_user_list "$1")
+    readarray -t array_tmpusr < <(get_afs_membership_user_list "$1" | jq --raw-output '.[]')
+    user_dict["$1"]=${array_tmpusr[@]}
 
-    for afs_group in $(get_afs_owned_group_list "$1")
+    readarray -t array_tmpgrp < <(get_afs_owned_group_list "$1" | jq --raw-output '.[]')
+    for afs_group in ${array_tmpgrp[@]}
     do
-        user_dict[${afs_group}]=$(get_afs_membership_user_list $afs_group)
+        readarray -t array_tmpusr < <(get_afs_membership_user_list $afs_group | jq --raw-output '.[]')
+        user_dict[${afs_group}]=${array_tmpusr[@]}
     done
 
     local -a args
@@ -126,3 +130,58 @@ get_afs_users_recursive() {
     done
     jq --sort-keys --null-input "${args[@]}" '$ARGS.named | map_values(split(" "))'
 }
+
+
+usage() {
+    cat <<EOF
+Usage: afs-mem <command> <name-or-id>
+
+Commands:
+  name-details
+  owned-list
+  membership-list
+  membership-user-list
+  membership-group-list
+  owned-user-list
+  owned-group-list
+  users-recursive
+EOF
+}
+
+if [[ $# -lt 2 ]]; then
+    usage
+    exit 1
+fi
+
+AFS_ITEM="$1"
+
+case $AFS_ITEM in
+    "name-details")
+        get_afs_name_details "$2"
+        ;;
+    "owned-list")
+        get_afs_owned_list "$2"
+        ;;
+    "membership-list")
+        get_afs_membership_list "$2"
+        ;;
+    "membership-user-list")
+        get_afs_membership_user_list "$2"
+        ;;
+    "membership-group-list")
+        get_afs_membership_group_list "$2"
+        ;;
+    "owned-user-list")
+        get_afs_owned_user_list "$2"
+        ;;
+    "owned-group-list")
+        get_afs_owned_group_list "$2"
+        ;;
+    "users-recursive")
+        get_afs_users_recursive "$2"
+        ;;
+    *)
+        usage
+        exit 2
+        ;;
+esac
