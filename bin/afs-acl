@@ -17,8 +17,9 @@ __parse_afsacl_single_line() {
   [[ "$input" =~ "-negative" ]] && is_negative=true
 
   local acl_part=$(echo "$input" | sed 's/.*-acl //; s/ -negative//' | xargs)
+  local acl_part_acronyms=$(echo "$acl_part" | sed 's/rlidwka/all/g')
 
-  echo "$acl_part" | jq --raw-input --arg p "$path_curr" --argjson n "$is_negative" '
+  echo "$acl_part_acronyms" | jq --raw-input --arg p "$path_curr" --argjson n "$is_negative" '
     split(" +"; "") |
     [ range(0; length; 2) as $i |
       {group: .[$i], authorizations: .[$i+1]} + (if $n then {negative: true} else {} end)
