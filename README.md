@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 
 # AFS utilities
 
-Bash script to parse Andrew File System users and groups and produce [JSON](https://www.json.org) outputs.
+Bash scripts to parse Andrew File System users, groups, and ACLs and produce [JSON](https://www.json.org) outputs.
 
 [![basher install](https://www.basher.it/assets/logo/basher_install.svg)](https://www.basher.it/package/)
 ![Shell Script](https://img.shields.io/badge/Shell_Script-121011?style=flat&logo=gnu-bash&logoColor=white)
@@ -26,6 +26,7 @@ curl -s https://raw.githubusercontent.com/basherpm/basher/master/install.sh | ba
 
 | Command                                    | Action                                                  |
 | :----------------------------------------- | :------------------------------------------------------ |
+| `afs-acl path <path> [<path> ...]`         | Get ACL details for one or more paths                  |
 | `afs-mem name-details <afs_name>`          | Get details about an AFS user or group                  |
 | `afs-mem owned-list <afs_name>`            | List all users and groups owned                         |
 | `afs-mem owned-user-list <afs_name>`       | List users owned                                        |

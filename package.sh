@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: MPL-2.0
 
 BINS=bin/afs-mem:bin/afs-acl
-BASH_COMPLETIONS=completions/afs-mem.bash:completions/afs-acl.bash
+BASH_COMPLETIONS=completions/afs-utils.bash
 DEPS=

@@ -5,6 +5,8 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+set -e -u -o pipefail
+
 
 __parse_afsacl_single_line() {
   local input="$1"
@@ -45,10 +47,10 @@ __get_afsacl_json() {
 
 __usage() {
     cat <<EOF
-Usage: afs-acl <command> <name>
+Usage: afs-acl <command> [args...]
 
 Commands:
-  path
+  path <path> [<path> ...]
 EOF
 }
 
@@ -61,7 +63,15 @@ AFS_ITEM="$1"
 
 case $AFS_ITEM in
     "path")
-        __get_afsacl_json "$2"
+        shift
+        if [[ $# -eq 0 ]]; then
+            __usage
+            exit 1
+        fi
+        paths=("$@")
+        for path in "${paths[@]}"; do
+            __get_afsacl_json "$path"
+        done | jq -s 'add'
         ;;
     *)
         __usage
