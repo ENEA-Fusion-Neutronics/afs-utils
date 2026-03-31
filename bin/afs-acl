@@ -13,13 +13,16 @@ __parse_afsacl_single_line() {
 
   local path_curr=$(echo "$input" | grep -oP '(?<=-dir )[^ ]+')
 
-  local type_acl="normal"
-  [[ "$input" =~ "-negative" ]] && type_acl="negative"
+  local is_negative=false
+  [[ "$input" =~ "-negative" ]] && is_negative=true
 
   local acl_part=$(echo "$input" | sed 's/.*-acl //; s/ -negative//' | xargs)
 
-  echo "$acl_part" | jq --raw-input --arg p "$path_curr" --arg t "$type_acl" 'split(" +"; "") | [ range(0; length
-; 2) as $i | { group: .[$i], authorizations: .[$i+1], type: ($t) } ] | { ($p): . }'
+  echo "$acl_part" | jq --raw-input --arg p "$path_curr" --argjson n "$is_negative" '
+    split(" +"; "") |
+    [ range(0; length; 2) as $i |
+      {group: .[$i], authorizations: .[$i+1]} + (if $n then {negative: true} else {} end)
+    ] | { ($p): . }'
 }
 
 
