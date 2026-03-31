@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2026 ENEA
+# SPDX-FileContributor: Alberto Previti
+#
+# SPDX-License-Identifier: MPL-2.0
+
+
+_parse_afsacl_single_line() {
+  local input="$1"
+
+  local path_curr=$(echo "$input" | grep -oP '(?<=-dir )[^ ]+')
+
+  local type_acl="normal"
+  [[ "$input" =~ "-negative" ]] && type_acl="negative"
+
+  local acl_part=$(echo "$input" | sed 's/.*-acl //; s/ -negative//' | xargs)
+
+  echo "$acl_part" | jq --raw-input --arg p "$path_curr" --arg t "$type_acl" 'split(" +"; "") | [ range(0; length
+; 2) as $i | { group: .[$i], authorizations: .[$i+1], type: ($t) } ] | { ($p): . }'
+}
+
+
+get_afsacl_json() {
+  local target_path="$1"
+  local json_stream=""
+
+  while IFS= read -r line; do
+    local parsed_line=$(_parse_afsacl_single_line "$line")
+
+    if [[ -n "$parsed_line" ]]; then
+      json_stream+="${parsed_line}"$'\n'
+    fi
+  done < <(fs listacl -path "$target_path" -cmd 2>/dev/null)
+
+  echo "$json_stream" | jq -s '
+    reduce .[] as $item ({};
+      reduce ($item | keys[]) as $key (.;
+        .[$key] += $item[$key]
+      )
+    )
+  '
+}
+
+
+usage() {
+    cat <<EOF
+Usage: afs-acl <command> <name>
+
+Commands:
+  path
+EOF
+}
+
+if [[ $# -lt 2 ]]; then
+    usage
+    exit 1
+fi
+
+AFS_ITEM="$1"
+
+case $AFS_ITEM in
+    "path")
+        get_afsacl_json "$2"
+        ;;
+    *)
+        usage
+        exit 2
+        ;;
+esac
