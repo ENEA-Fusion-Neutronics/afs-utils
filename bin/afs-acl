@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 
-_parse_afsacl_single_line() {
+__parse_afsacl_single_line() {
   local input="$1"
 
   local path_curr=$(echo "$input" | grep -oP '(?<=-dir )[^ ]+')
@@ -21,12 +21,12 @@ _parse_afsacl_single_line() {
 }
 
 
-get_afsacl_json() {
+__get_afsacl_json() {
   local target_path="$1"
   local json_stream=""
 
   while IFS= read -r line; do
-    local parsed_line=$(_parse_afsacl_single_line "$line")
+    local parsed_line=$(__parse_afsacl_single_line "$line")
 
     if [[ -n "$parsed_line" ]]; then
       json_stream+="${parsed_line}"$'\n'
@@ -43,7 +43,7 @@ get_afsacl_json() {
 }
 
 
-usage() {
+__usage() {
     cat <<EOF
 Usage: afs-acl <command> <name>
 
@@ -53,7 +53,7 @@ EOF
 }
 
 if [[ $# -lt 2 ]]; then
-    usage
+    __usage
     exit 1
 fi
 
@@ -61,10 +61,10 @@ AFS_ITEM="$1"
 
 case $AFS_ITEM in
     "path")
-        get_afsacl_json "$2"
+        __get_afsacl_json "$2"
         ;;
     *)
-        usage
+        __usage
         exit 2
         ;;
 esac
